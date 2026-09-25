@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Dev Quest – Classical vs AI Survey</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+    :root {
+      --bg: #0f0f1a;
+      --panel: #1a1a2e;
+      --accent: #00d4ff;
+      --accent2: #ff6b9d;
+      --success: #00e676;
+      --text: #e0e0ff;
+      --muted: #8888aa;
+      --border: #2a2a4a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 20% 30%, #1a1a3a 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, #2a1a3a 0%, transparent 40%);
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 720px;
+      padding: 20px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      height: 28px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+      transition: width 0.4s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 16px;
+      color: #000;
+      font-weight: bold;
+    }
+
+    /* Main panel */
+    .panel {
+      background: var(--panel);
+      border: 3px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scene / Question area */
+    .scene {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+    }
+
+    .scene.active {
+      display: flex;
+    }
+
+    .npc {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .npc-avatar {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #2a2a5a, #1a1a3a);
+      border: 3px solid var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+
+    .npc-bubble {
+      background: #12122a;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      position: relative;
+      flex: 1;
+    }
+
+    .npc-bubble::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 20px;
+      border: 6px solid transparent;
+      border-right-color: var(--border);
+    }
+
+    .question-text {
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .question-number {
+      font-size: 16px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-family: 'Press Start 2P', cursive;
+    }
+
+    /* Choices */
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .choice-btn {
+      background: #12122a;
+      border: 2px solid var(--border);
+      color: var(--text);
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .choice-btn:hover {
+      border-color: var(--accent);
+      background: #1a1a3a;
+      transform: translateX(6px);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .choice-btn:active {
+      transform: translateX(2px);
+    }
+
+    .choice-key {
+      background: var(--accent);
+      color: #000;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Start & End screens */
+    .center-content {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 16px;
+    }
+
+    .big-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 22px;
+      color: var(--accent);
+      line-height: 1.6;
+      text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+    }
+
+    .desc {
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+    .primary-btn {
+      background: linear-gradient(90deg, var(--accent), #0099cc);
+      color: #000;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      padding: 16px 32px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+    }
+
+    .primary-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+    }
+
+    .secondary-btn {
+      background: transparent;
+      border: 2px solid var(--accent2);
+      color: var(--accent2);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 6px;
+      transition: all 0.2s;
+    }
+
+    .secondary-btn:hover {
+      background: var(--accent2);
+      color: #000;
+    }
+
+    .stats {
+      background: #12122a;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      text-align: left;
+      width: 100%;
+      max-width: 400px;
+      font-size: 20px;
+    }
+
+    .stats div {
+      margin: 6px 0;
+    }
+
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    /* Pixel decoration */
+    .pixel-bar {
+      height: 4px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--accent) 0 8px,
+        transparent 8px 16px
+      );
+      margin: 12px 0;
+      opacity: 0.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      header h1 { font-size: 14px; }
+      .question-text { font-size: 20px; }
+      .choice-btn { font-size: 18px; padding: 12px; }
+      .big-title { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <header>
+      <h1>GAME DEV QUEST</h1>
+      <p>Classical PCG vs AI-Assisted Generation Survey</p>
+    </header>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress">0%</div>
+    </div>
+
+    <div class="panel">
+      <!-- START SCREEN -->
+      <div class="scene active" id="scene-start">
+        <div class="center-content">
+          <div class="big-title">WELCOME, DEVELOPER</div>
+          <div class="pixel-bar"></div>
+          <p class="desc">
+            You are about to enter a short interactive survey about<br>
+            <strong style="color:var(--accent)">Classical Procedural Generation</strong> vs<br>
+            <strong style="color:var(--accent2)">AI-Assisted Generation</strong> in 2D games.
+          </p>
+          <p class="desc" style="font-size:18px; margin-top:8px;">
+            Answer honestly. There are no right or wrong answers.<br>
+            Your responses will help academic research.
+          </p>
+          <button class="primary-btn" onclick="startSurvey()">START QUEST</button>
+        </div>
+      </div>
+
+      <!-- QUESTION SCENES will be injected here -->
+      <div id="question-container"></div>
+
+      <!-- END SCREEN -->
+      <div class="scene" id="scene-end">
+        <div class="center-content">
+          <div class="big-title">QUEST COMPLETE!</div>
+          <div class="pixel-bar"></div>
+          <p class="desc">Thank you for sharing your experience.</p>
+          
+          <div class="stats" id="summary-stats"></div>
+
+          <p style="color:var(--muted); font-size:18px;">Download your answers:</p>
+          <div>
+            <button class="secondary-btn" onclick="downloadJSON()">⬇ JSON</button>
+            <button class="secondary-btn" onclick="downloadCSV()">⬇ CSV</button>
+          </div>
+          <button class="primary-btn" style="margin-top:20px;" onclick="location.reload()">PLAY AGAIN</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      MCA Research Project • Classical vs AI in 2D Game Development
+    </footer>
+  </div>
+
+  <script>
+    // ===================== SURVEY QUESTIONS =====================
+    const questions = [
+      {
+        id: "q1",
+        npc: "🤖",
+        text: "What is your current experience level with game development?",
+        options: [
+          { value: "beginner", label: "Beginner (learning / student projects)" },
+          { value: "intermediate", label: "Intermediate (made a few complete games)" },
+          { value: "advanced", label: "Advanced (multiple released or commercial projects)" },
+          { value: "none", label: "No real experience yet" }
+        ]
+      },
+      {
+        id: "q2",
+        npc: "🧩",
+        text: "Have you ever used classical procedural generation techniques? (Wave Function Collapse, Cellular Automata, Perlin Noise, etc.)",
+        options: [
+          { value: "yes_often", label: "Yes, I use them regularly" },
+          { value: "yes_tried", label: "Yes, I have tried them a few times" },
+          { value: "heard", label: "I have only heard about them" },
+          { value: "no", label: "No, never used or heard of them" }
+        ]
+      },
+      {
+        id: "q3",
+        npc: "🧠",
+        text: "Have you used any AI tools for game development? (ChatGPT, Copilot, Midjourney, Leonardo, Unity Muse, etc.)",
+        options: [
+          { value: "yes_often", label: "Yes, I use AI tools frequently" },
+          { value: "yes_tried", label: "Yes, I have tried some AI tools" },
+          { value: "rarely", label: "Only rarely / experimentally" },
+          { value: "no", label: "No, I have not used any AI tools" }
+        ]
+      },
+      {
+        id: "q4",
+        npc: "⚖️",
+        text: "For generating 2D game levels, which approach do you currently find EASIER to work with?",
+        options: [
+          { value: "classical", label: "Classical methods (WFC, rules, algorithms)" },
+          { value: "ai", label: "AI-assisted methods (prompts / generative tools)" },
+          { value: "hybrid", label: "A hybrid of both" },
+          { value: "unsure", label: "Not sure / No experience with either" }
+        ]
+      },
+      {
+        id: "q5",
+        npc: "🎮",
+        text: "Which approach generally gives the developer MORE CONTROL over the final level design?",
+        options: [
+          { value: "classical", label: "Classical procedural generation" },
+          { value: "ai", label: "AI-assisted generation" },
+          { value: "equal", label: "Both give similar control" },
+          { value: "depends", label: "It depends on the specific tool" }
+        ]
+      },
+      {
+        id: "q6",
+        npc: "✨",
+        text: "In your opinion, which method produces more COHERENT and playable 2D levels with less manual fixing?",
+        options: [
+          { value: "classical", label: "Classical methods (more consistent rules)" },
+          { value: "ai", label: "AI methods (more creative but need cleanup)" },
+          { value: "hybrid", label: "Hybrid approaches work best" },
+          { value: "unsure", label: "Not enough experience to judge" }
+        ]
+      },
+      {
+        id: "q7",
+        npc: "📈",
+        text: "Overall, has the rise of generative AI made 2D game development EASIER or HARDER for you?",
+        options: [
+          { value: "much_easier", label: "Much easier" },
+          { value: "somewhat_easier", label: "Somewhat easier" },
+          { value: "same", label: "About the same" },
+          { value: "somewhat_harder", label: "Somewhat harder" },
+          { value: "much_harder", label: "Much harder" }
+        ]
+      },
+      {
+        id: "q8",
+        npc: "💡",
+        text: "What is the BIGGEST advantage of using AI tools in 2D game development?",
+        options: [
+          { value: "speed", label: "Faster asset & prototype creation" },
+          { value: "ideas", label: "Helps with ideas and overcoming creative blocks" },
+          { value: "coding", label: "Helps with coding and debugging" },
+          { value: "learning", label: "Makes learning game development easier" },
+          { value: "none", label: "I don’t see major advantages yet" }
+        ]
+      },
+      {
+        id: "q9",
+        npc: "⚠️",
+        text: "What is the BIGGEST challenge or disadvantage of AI tools in game development?",
+        options: [
+          { value: "control", label: "Less precise control over the output" },
+          { value: "quality", label: "Inconsistent or low-quality results" },
+          { value: "dependency", label: "Risk of becoming dependent on AI" },
+          { value: "ethics", label: "Ethical / copyright / originality concerns" },
+          { value: "none", label: "No major challenges for me" }
+        ]
+      },
+      {
+        id: "q10",
+        npc: "🚀",
+        text: "In the future, which approach do you think will be more important for 2D indie / student game developers?",
+        options: [
+          { value: "classical", label: "Strong classical / algorithmic skills" },
+          { value: "ai", label: "Mastering AI tools and prompt engineering" },
+          { value: "both", label: "A balanced mix of both classical and AI skills" },
+          { value: "unsure", label: "Too early to say" }
+        ]
+      },
+      {
+        id: "q11",
+        npc: "📝",
+        text: "Would you be interested in using a hybrid system (Classical algorithms + AI) for level generation?",
+        options: [
+          { value: "yes_strongly", label: "Yes, strongly interested" },
+          { value: "yes", label: "Yes, somewhat interested" },
+          { value: "neutral", label: "Neutral" },
+          { value: "no", label: "No, prefer pure classical or pure AI" }
+        ]
+      },
+      {
+        id: "q12",
+        npc: "🎓",
+        text: "Any final comment about Classical PCG vs AI in game development? (Optional)",
+        options: [
+          { value: "skip", label: "Skip – No additional comment" },
+          { value: "comment_later", label: "I have thoughts but will write them separately" }
+        ],
+        isOptional: true
+      }
+    ];
+
+    // ===================== STATE =====================
+    let currentIndex = 0;
+    let answers = {};
+    let startTime = null;
+
+    // ===================== FUNCTIONS =====================
+    function startSurvey() {
+      startTime = new Date();
+      document.getElementById('scene-start').classList.remove('active');
+      currentIndex = 0;
+      showQuestion(0);
+    }
+
+    function showQuestion(index) {
+      const container = document.getElementById('question-container');
+      container.innerHTML = '';
+
+      if (index >= questions.length) {
+        showEndScreen();
+        return;
+      }
+
+      const q = questions[index];
+      const scene = document.createElement('div');
+      scene.className = 'scene active';
+      scene.id = 'scene-q' + index;
+
+      scene.innerHTML = `
+        <div class="npc">
+          <div class="npc-avatar">${q.npc}</div>
+          <div class="npc-bubble">
+            <div class="question-number">QUESTION ${index + 1} / ${questions.length}</div>
+            <div class="question-text">${q.text}</div>
+          </div>
+        </div>
+        <div class="choices" id="choices-${index}"></div>
+      `;
+
+      container.appendChild(scene);
+
+      const choicesDiv = document.getElementById('choices-' + index);
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerHTML = `<span class="choice-key">${String.fromCharCode(65 + i)}</span> ${opt.label}`;
+        btn.onclick = () => selectAnswer(q.id, opt.value, opt.label, index);
+        choicesDiv.appendChild(btn);
+      });
+
+      updateProgress(index);
+    }
+
+    function selectAnswer(qid, value, label, index) {
+      answers[qid] = {
+        question: questions[index].text,
+        value: value,
+        label: label
+      };
+      currentIndex = index + 1;
+      showQuestion(currentIndex);
+    }
+
+    function updateProgress(index) {
+      const percent = Math.round((index / questions.length) * 100);
+      const bar = document.getElementById('progress');
+      bar.style.width = percent + '%';
+      bar.textContent = percent + '%';
+    }
+
+    function showEndScreen() {
+      document.getElementById('question-container').innerHTML = '';
+      document.getElementById('scene-end').classList.add('active');
+      document.getElementById('progress').style.width = '100%';
+      document.getElementById('progress').textContent = '100%';
+
+      const endTime = new Date();
+      const durationSec = Math.round((endTime - startTime) / 1000);
+
+      // Simple summary
+      let summaryHTML = `<div><strong>Questions answered:</strong> ${Object.keys(answers).length}</div>`;
+      summaryHTML += `<div><strong>Time taken:</strong> ${durationSec} seconds</div>`;
+      
+      // Highlight a couple of key answers if present
+      if (answers.q7) {
+        summaryHTML += `<div><strong>AI made development:</strong> ${answers.q7.label}</div>`;
+      }
+      if (answers.q4) {
+        summaryHTML += `<div><strong>Easier approach:</strong> ${answers.q4.label}</div>`;
+      }
+
+      document.getElementById('summary-stats').innerHTML = summaryHTML;
+
+      // Store meta
+      answers._meta = {
+        completedAt: endTime.toISOString(),
+        durationSeconds: durationSec,
+        userAgent: navigator.userAgent,
+        project: "Classical PCG vs AI-Assisted Generation – MCA Survey"
+      };
+    }
+
+    function downloadJSON() {
+      const dataStr = JSON.stringify(answers, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survey_response_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadCSV() {
+      // Create a simple CSV
+      let csv = 'Question ID,Question Text,Selected Value,Selected Label\n';
+      questions.forEach(q => {
+        if (answers[q.id]) {
+          const a = answers[q.id];
+          // Escape quotes
+          const qText = `"${a.question.replace(/"/g, '""')}"`;
+          const label = `"${a.label.replace(/"/g, '""')}"`;
+          csv += `${q.id},${qText},${a.value},${label}\n`;
+        }
+      });
+
+      // Add meta as extra rows
+      if (answers._meta) {
+        csv += `\n_meta,completedAt,${answers._meta.completedAt},\n`;
+        csv += `_meta,durationSeconds,${answers._meta.durationSeconds},\n`;
+      }
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survey_response_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Keyboard support (A B C D ...)
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toUpperCase();
+      if (key >= 'A' && key <= 'E') {
+        const idx = key.charCodeAt(0) - 65;
+        const activeChoices = document.querySelector('.scene.active .choices');
+        if (activeChoices) {
+          const buttons = activeChoices.querySelectorAll('.choice-btn');
+          if (buttons[idx]) buttons[idx].click();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
