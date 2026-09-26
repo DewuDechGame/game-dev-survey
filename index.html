@@ -362,11 +362,13 @@
           
           <div class="stats" id="summary-stats"></div>
 
-          <p style="color:var(--muted); font-size:18px;">Download your answers:</p>
-          <div>
-            <button class="secondary-btn" onclick="downloadJSON()">⬇ JSON</button>
-            <button class="secondary-btn" onclick="downloadCSV()">⬇ CSV</button>
-          </div>
+          <p style="color:var(--success); font-size:20px;">
+  ✓ Your response has been recorded.
+</p>
+
+<p style="color:var(--muted); font-size:18px;">
+  Thank you for participating in the research survey.
+</p>
           <button class="primary-btn" style="margin-top:20px;" onclick="location.reload()">PLAY AGAIN</button>
         </div>
       </div>
@@ -521,6 +523,43 @@
     let answers = {};
     let startTime = null;
 
+    const GOOGLE_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbz1pkSXglXC69lKw5qaHuCEtxcg7uAmlunpYpsp0Bu8hfdVpAhKWt1H3Bv0o7VsKTO9fg/exec";
+
+function submitToGoogleSheet() {
+
+  const data = new URLSearchParams();
+
+  data.append("timestamp", answers._meta.completedAt);
+  data.append("durationSeconds", answers._meta.durationSeconds);
+  data.append("userAgent", answers._meta.userAgent);
+
+  for (let i = 1; i <= 12; i++) {
+
+    const qid = "q" + i;
+
+    if (answers[qid]) {
+      data.append(qid, answers[qid].label);
+    } else {
+      data.append(qid, "");
+    }
+  }
+
+  data.append("comment", "");
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: data
+  })
+  .then(() => {
+    console.log("Survey response submitted.");
+  })
+  .catch(error => {
+    console.error("Submission error:", error);
+  });
+}
+
     // ===================== FUNCTIONS =====================
     function startSurvey() {
       startTime = new Date();
@@ -615,6 +654,8 @@
         userAgent: navigator.userAgent,
         project: "Classical PCG vs AI-Assisted Generation – MCA Survey"
       };
+      
+      submitToGoogleSheet();
     }
 
     function downloadJSON() {
